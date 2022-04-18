@@ -1,56 +1,41 @@
 #!/usr/bin/python3
 """
-a script that starts a Flask web application:
-    - web application must be listening on 0.0.0.0, port 5000
-    - Routes:
-        * '/'
-        * '/hbnb'
-        * /c/<text>
-        * /python/(<text>)
-        * /number/<n>
+starts a Flask web application
 """
 
 from flask import Flask
-
 app = Flask(__name__)
 
 
-@app.route('/')
-def hello_hbnb():
-    """ returns 'hellow HBNB!' when GET root route """
+@app.route('/', strict_slashes=False)
+def index():
+    """returns Hello HBNB!"""
     return 'Hello HBNB!'
 
 
-@app.route('/hbnb')
+@app.route('/hbnb', strict_slashes=False)
 def hbnb():
-    """ returns 'HBNB' when GET /hbnb """
+    """returns HBNB"""
     return 'HBNB'
 
 
-@app.route('/c/<text>')
-def C_is_fun(text):
-    """ returns 'C + text' what ever text
-    passed when calling the route /c/<text>"""
-    return 'C %s' % text.replace('_', ' ')
+@app.route('/c/<text>', strict_slashes=False)
+def cisfun(text):
+    """display “C ” followed by the value of the text variable"""
+    return 'C ' + text.replace('_', ' ')
 
 
-@app.route('/python/')
-@app.route('/python/<text>')
-def python_is_cool(text='is cool'):
-    """
-    display “Python ”, followed by the value of the text variable
-    """
-    return 'Python %s' % text.replace('_', ' ')
+@app.route('/python', strict_slashes=False)
+@app.route('/python/<text>', strict_slashes=False)
+def pythoniscool(text='is cool'):
+    """display “Python ”, followed by the value of the text variable"""
+    return 'Python ' + text.replace('_', ' ')
 
 
-@app.route('/number/<int:n>')
-def is_it_number(n):
-    """
-    display “n is a number” only if n is an integer
-    """
-    return '%d is a number' % n
-
+@app.route('/number/<int:n>', strict_slashes=False)
+def imanumber(n):
+    """display “n is a number” only if n is an integer"""
+    return "{:d} is a number".format(n)
 
 if __name__ == '__main__':
-    app.url_map.strict_slashes = False
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port='5000')
