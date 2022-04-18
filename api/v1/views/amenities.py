@@ -1,80 +1,94 @@
 #!/usr/bin/python3
-"""Routings for amenity-related API requests
+
 """
-
-from api.v1.views import app_views
-from flask import jsonify, abort, request
+   States module
+   View for State objects that handles all default RestFul API actions
+"""
+from models.amenity import Amenity
 from models import storage
+from api.v1.views import app_views
+from flask import jsonify, request, make_response, abort
 
 
-@app_views.route('/amenities', methods=['GET', 'POST'], strict_slashes=False)
-@app_views.route('/amenities/<amenity_id>', methods=['GET', 'DELETE', 'PUT'],
-                 strict_slashes=False)
-def amenity_methods(amenity_id=None):
-    """Handle requests to API for amentities
-    """
-    from models.amenity import Amenity
+@app_views.route('/amenities', methods=['GET'], strict_slashes=False)
+def get_all_amenities():
+    """ Retrieves all the amenities stored """
     amenities = storage.all(Amenity)
+    out = [amenity.to_dict() for amenity in amenities.values()]
+    return jsonify(out)
 
-    # GET REQUESTS
-    if request.method == 'GET':
-        if not amenity_id:  # if no id specified, return all
-            return jsonify([obj.to_dict() for obj in amenities.values()])
 
-        key = 'Amenity.' + amenity_id
-        try:  # if obj exists in dictionary, convert from obj -> dict -> json
-            return jsonify(amenities[key].to_dict())
-        except KeyError:
-            abort(404)  # Amenity with amenity_id does not exist
+@app_views.route('/amenities/<amenity_id>',
+                 methods=['GET'],
+                 strict_slashes=False)
+def get_an_amenity(amenity_id=None):
+    """ Retrieves an amenity object according to its id """
 
-    # DELETE REQUESTS
-    elif request.method == 'DELETE':
-        try:
-            key = 'Amenity.' + amenity_id
-            storage.delete(amenities[key])
-            storage.save()
-            return jsonify({}), 200
-        except:
-            abort(404)
+    if amenity_id is None:
+        return abort(404)
+    my_amenity = storage.get(Amenity, amenity_id)
+    if my_amenity is not None:
+        my_amenity = my_amenity.to_dict()
+        return jsonify(my_amenity)
 
-    # POST REQUESTS
-    elif request.method == 'POST':
-        # convert JSON request to dict
-        if request.is_json:
-            body_request = request.get_json()
-        else:
-            abort(400, 'Not a JSON')
+    return abort(404)
 
-        # instantiate, store, and return new Amenity object
-        if 'name' in body_request:
-            new_amenity = Amenity(**body_request)
-            storage.new(new_amenity)
-            storage.save()
-            return jsonify(new_amenity.to_dict()), 201
-        else:  # if request does not contain required attribute
-            abort(400, 'Missing name')
 
-    # PUT REQUESTS
-    elif request.method == 'PUT':
-        key = 'Amenity.' + amenity_id
-        try:
-            amenity = amenities[key]
+@app_views.route('/amenities/<amenity_id>', methods=['DELETE'],
+                 strict_slashes=False)
+def delete_an_amenity(amenity_id=None):
+    """ Deletes a Amenity object according to its id """
 
-            # convert JSON request to dict
-            if request.is_json:
-                body_request = request.get_json()
-            else:
-                abort(400, 'Not a JSON')
+    if amenity_id is None:
+        return abort(404)
+    my_amenity = storage.get(Amenity, amenity_id)
+    if my_amenity is not None:
+        storage.delete(my_amenity)
+        storage.save()
+        return make_response(jsonify({}), 200)
 
-            for key, val in body_request.items():
-                if key != 'id' and key != 'created_at' and key != 'updated_at':
-                    setattr(amenity, key, val)
+    return abort(404)
 
-            storage.save()
-            return jsonify(amenity.to_dict()), 200
-        except KeyError:
-            abort(404)
 
-    # UNSUPPORTED REQUESTS
-    else:
-        abort(501)
+@app_views.route('/amenities', methods=['POST'], strict_slashes=False)
+def create_a_amenity():
+    """
+        Creates a new Amenity object according to
+        the HTTP body request dictionary
+    """
+    body = request.get_json(silent=True)
+    if body is None:
+        return make_response(jsonify({'error': 'Not a JSON'}), 400)
+
+    if "name" not in body:
+        return make_response(jsonify({'error': 'Missing name'}), 400)
+
+    new = Amenity(**body)
+    new.save()
+    return make_response(jsonify(new.to_dict()), 201)
+
+
+@app_views.route('/amenities/<amenity_id>',
+                 methods=['PUT'],
+                 strict_slashes=False)
+def update_an_amenity(amenity_id=None):
+    """ Updates a amenity object according to its id """
+
+    if amenity_id is None:
+        return abort(404)
+
+    my_amenity = storage.get(Amenity, amenity_id)
+
+    if my_amenity is not None:
+        body = request.get_json(silent=True)
+        if body is None:
+            return make_response(jsonify({'error': 'Not a JSON'}), 400)
+
+        for key, value in body.items():
+            if key != 'id' and key != 'created_at' and key != 'updated_at':
+                setattr(my_amenity, key, value)
+        my_amenity.save()
+
+        return make_response(jsonify(my_amenity.to_dict()), 200)
+
+    return abort(404)
