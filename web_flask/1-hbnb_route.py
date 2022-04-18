@@ -1,22 +1,26 @@
 #!/usr/bin/python3
 """
-starts a Flask web application
+a basic Flask web application. with routes of
+- '/' and '/hbnb'
 """
 
 from flask import Flask
+
 app = Flask(__name__)
 
 
-@app.route('/', strict_slashes=False)
-def index():
-    """returns Hello HBNB!"""
+@app.route('/')
+def hello_hbnb():
+    """ returns 'hellow HBNB!' when GET root route """
     return 'Hello HBNB!'
 
 
-@app.route('/hbnb', strict_slashes=False)
+@app.route('/hbnb')
 def hbnb():
-    """returns HBNB"""
+    """ returns 'HBNB' whe GET /hbnb """
     return 'HBNB'
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port='5000')
+    app.url_map.strict_slashes = False
+    app.run(host='0.0.0.0', port=5000)
